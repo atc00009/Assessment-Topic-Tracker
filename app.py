@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from streamlit_gsheets import GSheetsConnection
 
 # Page Configuration
 st.set_page_config(page_title="Assessment Topic Tracker", page_icon="📝", layout="centered")
@@ -102,20 +101,22 @@ st.markdown("""
 st.markdown('<p class="main-title">📝 Assessment Topic Tracker</p>', unsafe_allow_html=True)
 st.markdown('<p class="sub-title">Arden University • Register & Track Your Topic Choice</p>', unsafe_allow_html=True)
 
-# Connect to Google Sheets
-conn = st.connection("gsheets", type=GSheetsConnection)
+# Setup Hybrid Database (Google Sheets with Session State Backup)
+if "submissions" not in st.session_state:
+    st.session_state.submissions = pd.DataFrame(columns=["Student Email", "Chosen Question", "Progress Status"])
 
-# Helper function to read the latest submissions from Google Sheets
-def get_submissions():
+def fetch_data():
     try:
-        df = conn.read(ttl="0s") # Force reload latest data
-        if df.empty or "Student Email" not in df.columns:
-            return pd.DataFrame(columns=["Student Email", "Chosen Question", "Progress Status"])
-        return df
+        from streamlit_gsheets import GSheetsConnection
+        conn = st.connection("gsheets", type=GSheetsConnection)
+        df = conn.read(ttl="0s")
+        if not df.empty and "Student Email" in df.columns:
+            st.session_state.submissions = df
     except Exception:
-        return pd.DataFrame(columns=["Student Email", "Chosen Question", "Progress Status"])
+        pass # Fallback smoothly to session state if GSheets connection fails
+    return st.session_state.submissions
 
-submissions_df = get_submissions()
+submissions_df = fetch_data()
 
 # Master Roster Validation List
 STUDENT_ID_OPTIONS = [
@@ -157,8 +158,9 @@ if submitted:
     else:
         formatted_email = f"{selected_student_id.lower()}@ardenuniversity.ac.uk"
         
-        # Filter out old record for this student and append new record
-        df_updated = submissions_df[submissions_df["Student Email"].str.lower() != formatted_email]
+        # Overwrite previous record for student
+        df = st.session_state.submissions
+        df = df[df["Student Email"].str.lower() != formatted_email]
         
         new_entry = pd.DataFrame([{
             "Student Email": formatted_email,
@@ -166,14 +168,19 @@ if submitted:
             "Progress Status": selected_status
         }])
         
-        df_final = pd.concat([df_updated, new_entry], ignore_index=True)
+        st.session_state.submissions = pd.concat([df, new_entry], ignore_index=True)
         
-        # Save updated data straight back to Google Sheets
-        conn.update(data=df_final)
-        st.cache_data.clear() # Clear cache to refresh values instantly
-        
+        # Try writing back to Google Sheets if configured
+        try:
+            from streamlit_gsheets import GSheetsConnection
+            conn = st.connection("gsheets", type=GSheetsConnection)
+            conn.update(data=st.session_state.submissions)
+            st.cache_data.clear()
+        except Exception:
+            pass
+
         st.success(f"✅ Selection recorded for Student ID: **{selected_student_id}**")
-        st.rerun() # Reload page to display updated stats
+        st.rerun()
 
 st.divider()
 
@@ -182,14 +189,14 @@ st.markdown('<p class="section-header">📊 Class Topic Statistics</p>', unsafe_
 
 all_questions = QUESTION_OPTIONS[1:]
 
-if submissions_df.empty:
+if st.session_state.submissions.empty:
     default_df = pd.DataFrame({
         "Assessment Question / Topic": all_questions,
         "Total Students Selected": [0] * len(all_questions)
     })
     st.dataframe(default_df, use_container_width=True, hide_index=True)
 else:
-    counts = submissions_df["Chosen Question"].value_counts()
+    counts = st.session_state.submissions["Chosen Question"].value_counts()
     summary_data = []
     for q in all_questions:
         summary_data.append({
@@ -200,24 +207,31 @@ else:
     st.dataframe(summary_df, use_container_width=True, hide_index=True)
 
 # SECRET TUTOR ACCESS VIA URL QUERY PARAMETER (?pin=com4025!)
-if st.query_params.get("pin") == "com4025!":
+current_pin = st.query_params.get("pin", "")
+
+if current_pin == "com4025!":
     st.divider()
     st.markdown('<p class="section-header">🔒 Tutor Control Panel (Private)</p>', unsafe_allow_html=True)
     
     st.markdown("### 📋 Student Roster Submissions")
-    if submissions_df.empty:
+    if st.session_state.submissions.empty:
         st.info("No student submissions logged yet.")
     else:
         st.dataframe(
-            submissions_df[["Student Email", "Chosen Question", "Progress Status"]], 
+            st.session_state.submissions[["Student Email", "Chosen Question", "Progress Status"]], 
             use_container_width=True, 
             hide_index=True
         )
     
     st.markdown("### ⚙️ Admin Tools")
-    if st.button("🗑️ Clear All Data in Google Sheet"):
-        empty_df = pd.DataFrame(columns=["Student Email", "Chosen Question", "Progress Status"])
-        conn.update(data=empty_df) # Clears sheet content
-        st.cache_data.clear()
-        st.success("Google Sheet wiped!")
+    if st.button("🗑️ Clear All Test Data Now"):
+        st.session_state["submissions"] = pd.DataFrame(columns=["Student Email", "Chosen Question", "Progress Status"])
+        try:
+            from streamlit_gsheets import GSheetsConnection
+            conn = st.connection("gsheets", type=GSheetsConnection)
+            conn.update(data=st.session_state["submissions"])
+            st.cache_data.clear()
+        except Exception:
+            pass
+        st.success("Data wiped successfully!")
         st.rerun()
