@@ -101,7 +101,7 @@ st.markdown("""
 st.markdown('<p class="main-title">📝 Assessment Topic Tracker</p>', unsafe_allow_html=True)
 st.markdown('<p class="sub-title">Arden University • Register & Track Your Topic Choice</p>', unsafe_allow_html=True)
 
-# Setup Hybrid Database (Google Sheets with Session State Backup)
+# Data Storage Setup
 if "submissions" not in st.session_state:
     st.session_state.submissions = pd.DataFrame(columns=["Student Email", "Chosen Question", "Progress Status"])
 
@@ -113,7 +113,7 @@ def fetch_data():
         if not df.empty and "Student Email" in df.columns:
             st.session_state.submissions = df
     except Exception:
-        pass # Fallback smoothly to session state if GSheets connection fails
+        pass
     return st.session_state.submissions
 
 submissions_df = fetch_data()
@@ -170,7 +170,7 @@ if submitted:
         
         st.session_state.submissions = pd.concat([df, new_entry], ignore_index=True)
         
-        # Try writing back to Google Sheets if configured
+        # Try writing back to Google Sheets
         try:
             from streamlit_gsheets import GSheetsConnection
             conn = st.connection("gsheets", type=GSheetsConnection)
@@ -206,11 +206,16 @@ else:
     summary_df = pd.DataFrame(summary_data)
     st.dataframe(summary_df, use_container_width=True, hide_index=True)
 
-# SECRET TUTOR ACCESS VIA URL QUERY PARAMETER (?pin=com4025!)
-current_pin = st.query_params.get("pin", "")
+st.divider()
 
-if current_pin == "com4025!":
-    st.divider()
+# DUAL TUTOR AUTHENTICATION (URL Parameter OR On-Screen Input)
+url_pin = st.query_params.get("pin", "")
+
+with st.expander("🔑 Tutor Access Portal"):
+    manual_pin = st.text_input("Enter Admin PIN:", type="password", key="manual_pin_entry")
+
+# Check if either URL parameter or manual text input matches PIN
+if url_pin == "com4025!" or manual_pin == "com4025!":
     st.markdown('<p class="section-header">🔒 Tutor Control Panel (Private)</p>', unsafe_allow_html=True)
     
     st.markdown("### 📋 Student Roster Submissions")
