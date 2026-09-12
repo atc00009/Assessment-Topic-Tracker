@@ -4,7 +4,7 @@ import pandas as pd
 # Page Configuration
 st.set_page_config(page_title="Assessment Topic Tracker", page_icon="📝", layout="centered")
 
-# Custom Styling (Bright Theme, Compact Fonts, Light Table & Sharp Tutor Expander)
+# Custom Styling Fix (High contrast text, readable labels, proper expander styling)
 st.markdown("""
     <style>
     /* Force Bright White Page Background */
@@ -38,8 +38,8 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
     }
     
-    /* Form Labels */
-    [data-testid="stForm"] label {
+    /* Form Labels - Forced Dark Visible Text */
+    [data-testid="stForm"] label, label, div[data-testid="stWidgetLabel"] p {
         color: #b45309 !important;
         font-size: 1.05rem !important;
         font-weight: 700 !important;
@@ -94,10 +94,10 @@ st.markdown("""
         color: #0f172a !important;
     }
 
-    /* Sharp, High-Contrast Tutor Expander */
+    /* Sharp, High-Contrast Expander with High Visibility Labels */
     div[data-testid="stExpander"] {
-        background-color: #f1f5f9 !important;
-        border: 2px solid #475569 !important;
+        background-color: #f8fafc !important;
+        border: 2px solid #64748b !important;
         border-radius: 8px !important;
         margin-top: 20px !important;
     }
@@ -205,16 +205,35 @@ else:
 st.divider()
 
 # Private View for Tutors (Protected with PIN: com4025!)
-with st.expander("🔒 Tutor View (Detailed Student List)"):
-    pin_input = st.text_input("Enter Admin PIN to view student details:", type="password")
-    if pin_input == "com4025!":
-        if st.session_state.submissions.empty:
-            st.info("No student submissions logged yet.")
+with st.expander("🔒 Tutor View & Data Tools"):
+    st.markdown("**Enter Admin PIN to view student details or manage data:**")
+    pin_input = st.text_input("Admin PIN:", type="password", key="tutor_pin_input")
+    unlock_clicked = st.button("Unlock Details / Authenticate")
+    
+    if unlock_clicked or pin_input:
+        if pin_input == "com4025!":
+            st.success("🔓 Access Granted")
+            
+            # 1. Detailed Student Table
+            st.markdown("### 📋 Student Roster Submissions")
+            if st.session_state.submissions.empty:
+                st.info("No student submissions logged yet.")
+            else:
+                st.dataframe(
+                    st.session_state.submissions[["Student Email", "Chosen Question", "Progress Status"]], 
+                    use_container_width=True, 
+                    hide_index=True
+                )
+            
+            # 2. Hard Reset Button inside Admin View
+            st.divider()
+            st.markdown("### ⚙️ Admin Testing Tools")
+            if st.button("🗑️ Clear All Test Data Now"):
+                st.session_state["submissions"] = pd.DataFrame(columns=["Student Email", "Chosen Question", "Progress Status"])
+                for k in list(st.session_state.keys()):
+                    if k != "submissions":
+                        del st.session_state[k]
+                st.success("Data wiped!")
+                st.rerun()
         else:
-            st.dataframe(
-                st.session_state.submissions[["Student Email", "Chosen Question", "Progress Status"]], 
-                use_container_width=True, 
-                hide_index=True
-            )
-    elif pin_input != "":
-        st.error("Incorrect PIN.")
+            st.error("❌ Incorrect PIN. Please try again.")
