@@ -1,35 +1,35 @@
 import streamlit as st
 import pandas as pd
 
-# Page Config
+# Page Configuration
 st.set_page_config(page_title="Assessment Topic Tracker", page_icon="📝", layout="centered")
 
-# CSS targeting ALL Streamlit text inputs, dropdowns, and buttons
+# Global Light Theme Override (Forces clean white page & light ash inputs)
 st.markdown("""
     <style>
-    /* 1. Page Background (Bright White) */
-    .stApp {
+    /* Force White Background */
+    .stApp, div[data-testid="stAppViewContainer"] {
         background-color: #ffffff !important;
     }
     
-    /* 2. Title & Subtitle */
+    /* Title Styles */
     .main-title {
         color: #b45309 !important;
         font-family: 'Arial', sans-serif;
-        font-size: 2.8rem !important;
+        font-size: 2.6rem !important;
         font-weight: 900 !important;
         text-align: center;
         margin-bottom: 5px;
     }
     .sub-title {
         color: #d97706 !important;
-        font-size: 1.2rem !important;
+        font-size: 1.1rem !important;
         font-weight: 700 !important;
         text-align: center;
         margin-bottom: 25px;
     }
     
-    /* 3. Main Form Outer Card */
+    /* Main Card Box */
     [data-testid="stForm"] {
         background-color: #fefce8 !important;
         border: 3px solid #f59e0b !important;
@@ -37,74 +37,54 @@ st.markdown("""
         padding: 30px !important;
     }
     
-    /* 4. Question Labels */
+    /* Input Labels */
     [data-testid="stForm"] label p {
         color: #b45309 !important;
         font-size: 1.3rem !important;
         font-weight: 800 !important;
     }
     
-    /* 5. FORCE ALL INPUT BOXES & DROPDOWNS TO ASH GREY */
-    .stTextInput input,
-    .stSelectbox div[data-baseweb="select"],
-    .stSelectbox div[data-baseweb="select"] > div,
-    div[data-baseweb="select"] {
-        background-color: #e2e8f0 !important; /* Soft Ash Grey */
-        color: #0f172a !important;            /* Dark Charcoal Text */
-        border: 1.5px solid #cbd5e1 !important;
+    /* LIGHT ASH GREY INPUT BOXES & DROPDOWNS */
+    div[data-baseweb="input"] > div,
+    div[data-baseweb="select"] > div {
+        background-color: #e2e8f0 !important; /* Ash Grey */
+        border: 2px solid #cbd5e1 !important;
         border-radius: 8px !important;
-        font-size: 1.15rem !important;
-        font-weight: 600 !important;
-    }
-
-    /* Selected Dropdown Item Text */
-    .stSelectbox div[data-baseweb="select"] * {
-        color: #0f172a !important;
-    }
-
-    /* Placeholder Text */
-    .stTextInput input::placeholder {
-        color: #64748b !important;
-    }
-
-    /* Dropdown Options List Popup */
-    ul[data-baseweb="menu"], 
-    ul[data-baseweb="menu"] * {
-        background-color: #f1f5f9 !important;
-        color: #0f172a !important;
     }
     
-    /* 6. FORCE SUBMIT BUTTON TO ASH GREY WITH BOLD TEXT */
-    div[data-testid="stForm"] button,
-    div[data-testid="stForm"] button * {
-        background-color: #cbd5e1 !important; /* Light Ash Grey Button */
-        color: #0f172a !important;            /* Dark Charcoal Text */
-        border: 2px solid #94a3b8 !important;
-        border-radius: 10px !important;
-        font-size: 1.3rem !important;
-        font-weight: 900 !important;
-        padding: 8px 16px !important;
-        width: 100% !important;
-        margin-top: 10px !important;
+    /* Text Inside Inputs and Dropdowns */
+    input, div[data-baseweb="select"] * {
+        color: #0f172a !important; /* Dark Text */
+        font-size: 1.15rem !important;
+        font-weight: 700 !important;
     }
-
-    div[data-testid="stForm"] button:hover {
-        background-color: #94a3b8 !important;
+    
+    /* VIBRANT GREEN SUBMIT BUTTON */
+    div[data-testid="stForm"] button {
+        background-color: #16a34a !important;
+        border: none !important;
+        border-radius: 10px !important;
+        padding: 12px !important;
+        width: 100% !important;
+        margin-top: 15px !important;
+    }
+    div[data-testid="stForm"] button p {
         color: #ffffff !important;
-        cursor: pointer;
+        font-size: 1.4rem !important;
+        font-weight: 900 !important;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# Main Titles
+# Page Header
 st.markdown('<p class="main-title">📝 Assessment Topic Tracker</p>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">Arden University • Register & Track Your Topic Choice</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">Arden University • Register & Track Your Assessment Topic</p>', unsafe_allow_html=True)
 
-# Session Storage
+# Data Storage Setup
 if "submissions" not in st.session_state:
-    st.session_state.submissions = pd.DataFrame(columns=["Student Email", "Chosen Question", "Progress Status"])
+    st.session_state.submissions = pd.DataFrame(columns=["Student ID / Email", "Chosen Question", "Progress Status"])
 
-# Master Validation List
+# Master Student Roster
 VALID_STUDENTS = [
     "25247104@ardenuniversity.ac.uk",
     "26102538@ardenuniversity.ac.uk",
@@ -128,31 +108,47 @@ STATUS_OPTIONS = ["🟡 Topic Selected", "🔵 Researching & Outlining", "🟢 W
 
 # Registration Form
 with st.form("tracker_form"):
-    user_email_input = st.text_input("1. Enter Your Arden Student ID or Email:", placeholder="e.g., 26102538").strip().lower()
+    user_id_input = st.text_input(
+        "1. Enter Your Arden Student ID:", 
+        placeholder="e.g., 26102538"
+    ).strip().lower()
+    
     selected_question = st.selectbox("2. Which Assessment Question Are You Working On?", QUESTION_OPTIONS)
     selected_status = st.selectbox("3. What Is Your Current Progress Stage?", STATUS_OPTIONS)
     
     submitted = st.form_submit_button("Submit Selection")
 
+# Form Validation
 if submitted:
-    formatted_email = user_email_input if "@" in user_email_input else f"{user_email_input}@ardenuniversity.ac.uk"
+    formatted_email = user_id_input if "@" in user_id_input else f"{user_id_input}@ardenuniversity.ac.uk"
     
-    if not user_email_input:
-        st.error("⚠️ Please enter your Student ID or Email.")
+    if not user_id_input:
+        st.error("⚠️ Please enter your Student ID.")
     elif formatted_email not in [e.lower() for e in VALID_STUDENTS]:
-        st.error("❌ Student ID not recognized.")
+        st.error("❌ Student ID not recognized. Please check your student ID number.")
     elif selected_question == QUESTION_OPTIONS[0]:
         st.error("⚠️ Please select an assessment question.")
     else:
+        # Save / Update entry
         df = st.session_state.submissions
-        df = df[df["Student Email"].str.lower() != formatted_email]
-        new_entry = pd.DataFrame([{"Student Email": formatted_email, "Chosen Question": selected_question, "Progress Status": selected_status}])
+        df = df[df["Student ID / Email"].str.lower() != formatted_email]
+        
+        new_entry = pd.DataFrame([{
+            "Student ID / Email": formatted_email,
+            "Chosen Question": selected_question,
+            "Progress Status": selected_status
+        }])
+        
         st.session_state.submissions = pd.concat([df, new_entry], ignore_index=True)
-        st.success(f"✅ Selection logged for **{formatted_email}**!")
+        st.success(f"✅ Topic selection recorded for Student ID: **{user_id_input}**!")
 
+# Anonymized Class Summary Section
 st.divider()
 st.subheader("📊 Class Topic Overview")
-if not st.session_state.submissions.empty:
+
+if st.session_state.submissions.empty:
+    st.info("No submissions logged yet.")
+else:
     topic_counts = st.session_state.submissions["Chosen Question"].value_counts().reset_index()
     topic_counts.columns = ["Question / Topic", "Total Students Selected"]
     st.dataframe(topic_counts, use_container_width=True, hide_index=True)
