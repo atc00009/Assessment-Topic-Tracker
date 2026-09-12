@@ -1,10 +1,10 @@
 import streamlit as st
 import pandas as pd
 
-# Page Config
+# Page Configuration
 st.set_page_config(page_title="Assessment Topic Tracker", page_icon="📝", layout="centered")
 
-# Custom Styling (Bright Theme with Compact Fonts & Ash-Grey Inputs)
+# Custom Styling (Bright Theme, Compact Fonts, Light Table & Sharp Admin Expander)
 st.markdown("""
     <style>
     /* Force Bright White Page Background */
@@ -12,7 +12,7 @@ st.markdown("""
         background-color: #ffffff !important;
     }
     
-    /* Main Title & Subtitle - Compact Font Sizes */
+    /* Main Title & Subtitle */
     .main-title {
         color: #b45309 !important;
         font-family: 'Arial', sans-serif;
@@ -87,6 +87,26 @@ st.markdown("""
         cursor: pointer;
     }
     
+    /* Light Theme Fix on Data Tables */
+    div[data-testid="stDataFrame"], 
+    div[data-testid="stDataFrame"] * {
+        background-color: #f1f5f9 !important;
+        color: #0f172a !important;
+    }
+
+    /* Sharp, High-Contrast Admin Tools Expander */
+    div[data-testid="stExpander"] {
+        background-color: #f1f5f9 !important;
+        border: 2px solid #475569 !important;
+        border-radius: 8px !important;
+        margin-top: 20px !important;
+    }
+    div[data-testid="stExpander"] summary p {
+        color: #0f172a !important;
+        font-weight: 800 !important;
+        font-size: 1.05rem !important;
+    }
+
     /* Section Headers */
     .section-header {
         color: #b45309 !important;
@@ -105,16 +125,17 @@ st.markdown('<p class="sub-title">Arden University • Register & Track Your Top
 if "submissions" not in st.session_state:
     st.session_state.submissions = pd.DataFrame(columns=["Student Email", "Chosen Question", "Progress Status"])
 
-# Master Roster Validation
-VALID_STUDENTS = [
-    "25247104@ardenuniversity.ac.uk",
-    "26102538@ardenuniversity.ac.uk",
-    "26104991@ardenuniversity.ac.uk",
-    "26130240@ardenuniversity.ac.uk",
-    "26136522@ardenuniversity.ac.uk",
-    "26143544@ardenuniversity.ac.uk",
-    "STU202542@ardenuniversity.ac.uk",
-    "26102203@ardenuniversity.ac.uk"
+# Master Roster Validation List
+STUDENT_ID_OPTIONS = [
+    "-- Select Your Student ID --",
+    "25247104",
+    "26102538",
+    "26104991",
+    "26130240",
+    "26136522",
+    "26143544",
+    "STU202542",
+    "26102203"
 ]
 
 QUESTION_OPTIONS = [
@@ -129,28 +150,22 @@ STATUS_OPTIONS = ["🟡 Topic Selected", "🔵 Researching & Outlining", "🟢 W
 
 # Registration Form Card
 with st.form("tracker_form"):
-    user_email_input = st.text_input(
-        "1. Enter Your Arden Student ID or Email:", 
-        placeholder="e.g., 26102538"
-    ).strip().lower()
-    
-    selected_question = st.selectbox("2. Which Assessment Question Are You Working On?", QUESTION_OPTIONS)
-    selected_status = st.selectbox("3. What Is Your Current Progress Stage?", STATUS_OPTIONS)
+    selected_student_id = st.selectbox("1. Select Your Arden Student ID:", STUDENT_ID_OPTIONS, key="input_student_id")
+    selected_question = st.selectbox("2. Which Assessment Question Are You Working On?", QUESTION_OPTIONS, key="input_question")
+    selected_status = st.selectbox("3. What Is Your Current Progress Stage?", STATUS_OPTIONS, key="input_status")
     
     submitted = st.form_submit_button("Submit Selection")
 
 # Form Processing
 if submitted:
-    formatted_email = user_email_input if "@" in user_email_input else f"{user_email_input}@ardenuniversity.ac.uk"
-    
-    if not user_email_input:
-        st.error("⚠️ Please enter your Student ID or Email.")
-    elif formatted_email not in [e.lower() for e in VALID_STUDENTS]:
-        st.error("❌ Student ID not recognized. Please check your student ID number.")
+    if selected_student_id == STUDENT_ID_OPTIONS[0]:
+        st.error("⚠️ Please select your Student ID from the dropdown list.")
     elif selected_question == QUESTION_OPTIONS[0]:
         st.error("⚠️ Please select an assessment question from the list.")
     else:
-        # Overwrite previous submission if student re-submits
+        formatted_email = f"{selected_student_id.lower()}@ardenuniversity.ac.uk"
+        
+        # Overwrite previous record for this specific student
         df = st.session_state.submissions
         df = df[df["Student Email"].str.lower() != formatted_email]
         
@@ -161,25 +176,14 @@ if submitted:
         }])
         
         st.session_state.submissions = pd.concat([df, new_entry], ignore_index=True)
-        st.success(f"✅ Selection logged for student: **{formatted_email}**")
+        st.success(f"✅ Selection recorded for Student ID: **{selected_student_id}**")
 
 st.divider()
 
-# Private View: Show the active student their own saved entry
-if 'user_email_input' in locals() and user_email_input:
-    check_email = user_email_input if "@" in user_email_input else f"{user_email_input}@ardenuniversity.ac.uk"
-    user_record = st.session_state.submissions[st.session_state.submissions["Student Email"].str.lower() == check_email]
-    
-    if not user_record.empty:
-        st.markdown('<p class="section-header">👤 Your Saved Selection</p>', unsafe_allow_html=True)
-        my_topic = user_record.iloc[0]["Chosen Question"]
-        my_status = user_record.iloc[0]["Progress Status"]
-        st.info(f"**Student ID:** {check_email}\n\n**Selected Question:** {my_topic}\n\n**Status:** {my_status}")
-
-# Public View: Always-Visible Class Statistics (Anonymized Aggregate View)
+# Public View: Aggregate Class Statistics Table (GDPR Compliant)
 st.markdown('<p class="section-header">📊 Class Topic Statistics</p>', unsafe_allow_html=True)
 
-all_questions = QUESTION_OPTIONS[1:] # All valid questions
+all_questions = QUESTION_OPTIONS[1:]
 
 if st.session_state.submissions.empty:
     default_df = pd.DataFrame({
@@ -198,8 +202,32 @@ else:
     summary_df = pd.DataFrame(summary_data)
     st.dataframe(summary_df, use_container_width=True, hide_index=True)
 
-# Admin Reset Tool for Testing
+st.divider()
+
+# Private View for Tutors (Protected with PIN: 1234)
+with st.expander("🔒 Tutor View (Detailed Student List)"):
+    pin_input = st.text_input("Enter Admin PIN to view student details:", type="password")
+    if pin_input == "1234":
+        if st.session_state.submissions.empty:
+            st.info("No student submissions logged yet.")
+        else:
+            st.dataframe(
+                st.session_state.submissions[["Student Email", "Chosen Question", "Progress Status"]], 
+                use_container_width=True, 
+                hide_index=True
+            )
+    elif pin_input != "":
+        st.error("Incorrect PIN.")
+
+# Admin Tools: Hard Reset Button
 with st.expander("⚙️ Admin Testing Tools"):
-    if st.button("🗑️ Clear Test Data"):
-        st.session_state.submissions = pd.DataFrame(columns=["Student Email", "Chosen Question", "Progress Status"])
+    st.write("Click below to clear all stored test records.")
+    if st.button("🗑️ Clear Test Data Now"):
+        # Wipe session dataframe
+        st.session_state["submissions"] = pd.DataFrame(columns=["Student Email", "Chosen Question", "Progress Status"])
+        
+        # Completely clear all session state keys
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+            
         st.rerun()
