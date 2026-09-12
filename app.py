@@ -4,7 +4,7 @@ import pandas as pd
 # Page Config
 st.set_page_config(page_title="Assessment Topic Tracker", page_icon="📝", layout="centered")
 
-# Custom Styling (Bright Theme with Light Ash Input Boxes)
+# Custom Styling (Bright Theme with Smaller Font Sizes)
 st.markdown("""
     <style>
     /* Force Bright White Page Background */
@@ -12,72 +12,74 @@ st.markdown("""
         background-color: #ffffff !important;
     }
     
-    /* Main Title & Subtitle */
+    /* Main Title & Subtitle - Smaller Sizes */
     .main-title {
         color: #b45309 !important;
         font-family: 'Arial', sans-serif;
-        font-size: 2.8rem !important;
-        font-weight: 900 !important;
+        font-size: 2.0rem !important; /* Reduced from 2.8rem */
+        font-weight: 800 !important;
         text-align: center;
-        margin-bottom: 5px;
+        margin-bottom: 2px;
     }
     .sub-title {
         color: #d97706 !important;
-        font-size: 1.2rem !important;
-        font-weight: 700 !important;
+        font-size: 0.95rem !important; /* Reduced from 1.2rem */
+        font-weight: 600 !important;
         text-align: center;
-        margin-bottom: 25px;
+        margin-bottom: 18px;
     }
     
     /* Outer Card Container */
     [data-testid="stForm"] {
         background-color: #fefce8 !important;
-        border: 3px solid #f59e0b !important;
-        border-radius: 16px !important;
-        padding: 30px !important;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.08) !important;
+        border: 2px solid #f59e0b !important;
+        border-radius: 12px !important;
+        padding: 20px !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
     }
     
-    /* Form Labels */
+    /* Form Labels - Smaller Font */
     [data-testid="stForm"] label {
         color: #b45309 !important;
-        font-size: 1.35rem !important;
-        font-weight: 800 !important;
+        font-size: 1.05rem !important; /* Reduced from 1.35rem */
+        font-weight: 700 !important;
     }
     
-    /* CHANGE BLACK INPUT BOXES TO LIGHT ASH GREY */
+    /* Light Ash Grey Input Boxes & Dropdowns - Compact Font */
     .stTextInput input, div[data-baseweb="select"] > div {
-        background-color: #e2e8f0 !important; /* Soft Ash Grey */
-        color: #0f172a !important;            /* Dark Charcoal Text */
-        border: 1.5px solid #cbd5e1 !important;
-        border-radius: 8px !important;
-        font-size: 1.15rem !important;
+        background-color: #e2e8f0 !important;
+        color: #0f172a !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 6px !important;
+        font-size: 0.95rem !important; /* Reduced from 1.15rem */
         font-weight: 600 !important;
     }
 
     /* Input Placeholder Text */
     .stTextInput input::placeholder {
         color: #64748b !important;
+        font-size: 0.9rem !important;
     }
 
     /* Dropdown Option Items */
     div[data-baseweb="menu"] {
         background-color: #f1f5f9 !important;
         color: #0f172a !important;
+        font-size: 0.95rem !important;
     }
     
-    /* Submit Button - Vibrant Green */
+    /* Submit Button - Smaller Font */
     div.stButton > button {
         background-color: #16a34a !important;
         color: #ffffff !important;
-        font-size: 1.4rem !important;
-        font-weight: 900 !important;
-        border-radius: 10px !important;
-        padding: 12px 24px !important;
+        font-size: 1.1rem !important; /* Reduced from 1.4rem */
+        font-weight: 800 !important;
+        border-radius: 8px !important;
+        padding: 8px 16px !important;
         border: none !important;
         width: 100% !important;
-        margin-top: 15px !important;
-        box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3) !important;
+        margin-top: 10px !important;
+        box-shadow: 0 2px 8px rgba(22, 163, 74, 0.2) !important;
     }
     div.stButton > button:hover {
         background-color: #15803d !important;
@@ -87,9 +89,9 @@ st.markdown("""
     /* Section Headers */
     .section-header {
         color: #b45309 !important;
-        font-size: 1.8rem !important;
+        font-size: 1.35rem !important; /* Reduced from 1.8rem */
         font-weight: 800 !important;
-        margin-top: 30px;
+        margin-top: 22px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -134,7 +136,7 @@ with st.form("tracker_form"):
     selected_question = st.selectbox("2. Which Assessment Question Are You Working On?", QUESTION_OPTIONS)
     selected_status = st.selectbox("3. What Is Your Current Progress Stage?", STATUS_OPTIONS)
     
-    submitted = st.form_submit_button(" Submit Selection")
+    submitted = st.form_submit_button("Submit Selection")
 
 # Form Validation & Processing
 if submitted:
@@ -158,7 +160,7 @@ if submitted:
         
         st.session_state.submissions = pd.concat([df, new_entry], ignore_index=True)
         
-        st.success(f" Selection logged for student: **{formatted_email}**")
+        st.success(f"Selection logged for student: **{formatted_email}**")
         st.info(f"**Topic:** {selected_question}\n\n**Status:** {selected_status}")
 
 # Anonymized Class Summary Section
