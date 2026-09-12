@@ -4,7 +4,7 @@ import pandas as pd
 # Page Configuration
 st.set_page_config(page_title="Assessment Topic Tracker", page_icon="📝", layout="centered")
 
-# Custom Styling (Bright Theme, Compact Fonts, Light Table & Sharp Admin Expander)
+# Custom Styling (Bright Theme, Compact Fonts, Light Table & Sharp Tutor Expander)
 st.markdown("""
     <style>
     /* Force Bright White Page Background */
@@ -94,7 +94,7 @@ st.markdown("""
         color: #0f172a !important;
     }
 
-    /* Sharp, High-Contrast Admin Tools Expander */
+    /* Sharp, High-Contrast Tutor Expander */
     div[data-testid="stExpander"] {
         background-color: #f1f5f9 !important;
         border: 2px solid #475569 !important;
@@ -204,10 +204,10 @@ else:
 
 st.divider()
 
-# Private View for Tutors (Protected with PIN: 1234)
+# Private View for Tutors (Protected with PIN: com4025!)
 with st.expander("🔒 Tutor View (Detailed Student List)"):
     pin_input = st.text_input("Enter Admin PIN to view student details:", type="password")
-    if pin_input == "1234":
+    if pin_input == "com4025!":
         if st.session_state.submissions.empty:
             st.info("No student submissions logged yet.")
         else:
@@ -218,16 +218,3 @@ with st.expander("🔒 Tutor View (Detailed Student List)"):
             )
     elif pin_input != "":
         st.error("Incorrect PIN.")
-
-# Admin Tools: Hard Reset Button
-with st.expander("⚙️ Admin Testing Tools"):
-    st.write("Click below to clear all stored test records.")
-    if st.button("🗑️ Clear Test Data Now"):
-        # Wipe session dataframe
-        st.session_state["submissions"] = pd.DataFrame(columns=["Student Email", "Chosen Question", "Progress Status"])
-        
-        # Completely clear all session state keys
-        for key in list(st.session_state.keys()):
-            del st.session_state[key]
-            
-        st.rerun()
