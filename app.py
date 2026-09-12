@@ -4,15 +4,15 @@ import pandas as pd
 # Page Config
 st.set_page_config(page_title="Assessment Topic Tracker", page_icon="📝", layout="centered")
 
-# Custom Bright Theme CSS
+# Custom Styling (Bright Theme with Light Ash Input Boxes)
 st.markdown("""
     <style>
-    /* Force Bright White Background */
+    /* Force Bright White Page Background */
     .stApp {
         background-color: #ffffff !important;
     }
     
-    /* Main Title - Dark Yellow / Gold & Extra Large */
+    /* Main Title & Subtitle */
     .main-title {
         color: #b45309 !important;
         font-family: 'Arial', sans-serif;
@@ -29,26 +29,41 @@ st.markdown("""
         margin-bottom: 25px;
     }
     
-    /* Clean Card Container on White Background */
+    /* Outer Card Container */
     [data-testid="stForm"] {
-        background-color: #fefce8 !important; /* Soft warm yellow card */
+        background-color: #fefce8 !important;
         border: 3px solid #f59e0b !important;
         border-radius: 16px !important;
         padding: 30px !important;
         box-shadow: 0 8px 20px rgba(0,0,0,0.08) !important;
     }
     
-    /* Form Labels - Large Dark Yellow Text */
+    /* Form Labels */
     [data-testid="stForm"] label {
         color: #b45309 !important;
         font-size: 1.35rem !important;
         font-weight: 800 !important;
     }
     
-    /* Input Text Boxes & Dropdowns Font Size */
-    .stTextInput input, div[data-baseweb="select"] {
+    /* CHANGE BLACK INPUT BOXES TO LIGHT ASH GREY */
+    .stTextInput input, div[data-baseweb="select"] > div {
+        background-color: #e2e8f0 !important; /* Soft Ash Grey */
+        color: #0f172a !important;            /* Dark Charcoal Text */
+        border: 1.5px solid #cbd5e1 !important;
+        border-radius: 8px !important;
         font-size: 1.15rem !important;
-        color: #1f2937 !important;
+        font-weight: 600 !important;
+    }
+
+    /* Input Placeholder Text */
+    .stTextInput input::placeholder {
+        color: #64748b !important;
+    }
+
+    /* Dropdown Option Items */
+    div[data-baseweb="menu"] {
+        background-color: #f1f5f9 !important;
+        color: #0f172a !important;
     }
     
     /* Submit Button - Vibrant Green */
@@ -87,7 +102,7 @@ st.markdown('<p class="sub-title">Arden University • Register & Track Your Top
 if "submissions" not in st.session_state:
     st.session_state.submissions = pd.DataFrame(columns=["Student Email", "Chosen Question", "Progress Status"])
 
-# Master Roster
+# Master Roster Validation
 VALID_STUDENTS = [
     "25247104@ardenuniversity.ac.uk",
     "26102538@ardenuniversity.ac.uk",
@@ -109,7 +124,7 @@ QUESTION_OPTIONS = [
 
 STATUS_OPTIONS = ["🟡 Topic Selected", "🔵 Researching & Outlining", "🟢 Writing Draft", "🏁 Finalized"]
 
-# Bright Yellow Form Card
+# Registration Form Card
 with st.form("tracker_form"):
     user_email_input = st.text_input(
         "1. Enter Your Arden Student ID or Email:", 
