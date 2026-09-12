@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from streamlit_gsheets import GSheetsConnection
 
 # Page Configuration
 st.set_page_config(page_title="Assessment Topic Tracker", page_icon="📝", layout="centered")
@@ -101,9 +102,20 @@ st.markdown("""
 st.markdown('<p class="main-title">📝 Assessment Topic Tracker</p>', unsafe_allow_html=True)
 st.markdown('<p class="sub-title">Arden University • Register & Track Your Topic Choice</p>', unsafe_allow_html=True)
 
-# Shared Data Storage Setup
-if "submissions" not in st.session_state:
-    st.session_state.submissions = pd.DataFrame(columns=["Student Email", "Chosen Question", "Progress Status"])
+# Connect to Google Sheets
+conn = st.connection("gsheets", type=GSheetsConnection)
+
+# Helper function to read the latest submissions from Google Sheets
+def get_submissions():
+    try:
+        df = conn.read(ttl="0s") # Force reload latest data
+        if df.empty or "Student Email" not in df.columns:
+            return pd.DataFrame(columns=["Student Email", "Chosen Question", "Progress Status"])
+        return df
+    except Exception:
+        return pd.DataFrame(columns=["Student Email", "Chosen Question", "Progress Status"])
+
+submissions_df = get_submissions()
 
 # Master Roster Validation List
 STUDENT_ID_OPTIONS = [
@@ -145,9 +157,8 @@ if submitted:
     else:
         formatted_email = f"{selected_student_id.lower()}@ardenuniversity.ac.uk"
         
-        # Overwrite previous record for this specific student
-        df = st.session_state.submissions
-        df = df[df["Student Email"].str.lower() != formatted_email]
+        # Filter out old record for this student and append new record
+        df_updated = submissions_df[submissions_df["Student Email"].str.lower() != formatted_email]
         
         new_entry = pd.DataFrame([{
             "Student Email": formatted_email,
@@ -155,8 +166,14 @@ if submitted:
             "Progress Status": selected_status
         }])
         
-        st.session_state.submissions = pd.concat([df, new_entry], ignore_index=True)
+        df_final = pd.concat([df_updated, new_entry], ignore_index=True)
+        
+        # Save updated data straight back to Google Sheets
+        conn.update(data=df_final)
+        st.cache_data.clear() # Clear cache to refresh values instantly
+        
         st.success(f"✅ Selection recorded for Student ID: **{selected_student_id}**")
+        st.rerun() # Reload page to display updated stats
 
 st.divider()
 
@@ -165,14 +182,14 @@ st.markdown('<p class="section-header">📊 Class Topic Statistics</p>', unsafe_
 
 all_questions = QUESTION_OPTIONS[1:]
 
-if st.session_state.submissions.empty:
+if submissions_df.empty:
     default_df = pd.DataFrame({
         "Assessment Question / Topic": all_questions,
         "Total Students Selected": [0] * len(all_questions)
     })
     st.dataframe(default_df, use_container_width=True, hide_index=True)
 else:
-    counts = st.session_state.submissions["Chosen Question"].value_counts()
+    counts = submissions_df["Chosen Question"].value_counts()
     summary_data = []
     for q in all_questions:
         summary_data.append({
@@ -183,26 +200,24 @@ else:
     st.dataframe(summary_df, use_container_width=True, hide_index=True)
 
 # SECRET TUTOR ACCESS VIA URL QUERY PARAMETER (?pin=com4025!)
-# Access URL: your-app-url/?pin=com4025!
 if st.query_params.get("pin") == "com4025!":
     st.divider()
     st.markdown('<p class="section-header">🔒 Tutor Control Panel (Private)</p>', unsafe_allow_html=True)
     
     st.markdown("### 📋 Student Roster Submissions")
-    if st.session_state.submissions.empty:
+    if submissions_df.empty:
         st.info("No student submissions logged yet.")
     else:
         st.dataframe(
-            st.session_state.submissions[["Student Email", "Chosen Question", "Progress Status"]], 
+            submissions_df[["Student Email", "Chosen Question", "Progress Status"]], 
             use_container_width=True, 
             hide_index=True
         )
     
     st.markdown("### ⚙️ Admin Tools")
-    if st.button("🗑️ Clear All Test Data Now"):
-        st.session_state["submissions"] = pd.DataFrame(columns=["Student Email", "Chosen Question", "Progress Status"])
-        for k in list(st.session_state.keys()):
-            if k != "submissions":
-                del st.session_state[k]
-        st.success("Data wiped!")
+    if st.button("🗑️ Clear All Data in Google Sheet"):
+        empty_df = pd.DataFrame(columns=["Student Email", "Chosen Question", "Progress Status"])
+        conn.update(data=empty_df) # Clears sheet content
+        st.cache_data.clear()
+        st.success("Google Sheet wiped!")
         st.rerun()
