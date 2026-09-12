@@ -4,7 +4,7 @@ import pandas as pd
 # Page Configuration
 st.set_page_config(page_title="Assessment Topic Tracker", page_icon="📝", layout="centered")
 
-# Custom Styling (Bright Theme, Fixed Invisible Expander Text)
+# Custom Styling
 st.markdown("""
     <style>
     /* Force Bright White Page Background */
@@ -56,12 +56,6 @@ st.markdown("""
         font-weight: 600 !important;
     }
 
-    /* Input Placeholder Text */
-    .stTextInput input::placeholder {
-        color: #64748b !important;
-        font-size: 0.9rem !important;
-    }
-
     /* Dropdown Option Menu Items */
     div[data-baseweb="menu"], div[data-baseweb="menu"] * {
         background-color: #f1f5f9 !important;
@@ -84,7 +78,6 @@ st.markdown("""
     }
     div.stButton > button:hover {
         background-color: #15803d !important;
-        cursor: pointer;
     }
     
     /* Light Theme Fix on Data Tables */
@@ -92,26 +85,6 @@ st.markdown("""
     div[data-testid="stDataFrame"] * {
         background-color: #f1f5f9 !important;
         color: #0f172a !important;
-    }
-
-    /* FIX INVISIBLE HEADINGS/TEXT INSIDE EXPANDER */
-    div[data-testid="stExpander"] {
-        background-color: #f8fafc !important;
-        border: 2px solid #64748b !important;
-        border-radius: 8px !important;
-        margin-top: 20px !important;
-    }
-    div[data-testid="stExpander"] * {
-        color: #0f172a !important;
-    }
-    div[data-testid="stExpander"] summary p {
-        color: #0f172a !important;
-        font-weight: 800 !important;
-        font-size: 1.05rem !important;
-    }
-    div[data-testid="stExpander"] h3 {
-        color: #b45309 !important;
-        font-weight: 800 !important;
     }
 
     /* Section Headers */
@@ -209,38 +182,27 @@ else:
     summary_df = pd.DataFrame(summary_data)
     st.dataframe(summary_df, use_container_width=True, hide_index=True)
 
-st.divider()
-
-# Private View for Tutors (Protected with PIN: com4025!)
-with st.expander("🔒 Tutor View & Data Tools"):
-    st.markdown("**Enter Admin PIN to view student details or manage data:**")
-    pin_input = st.text_input("Admin PIN:", type="password", key="tutor_pin_input")
-    unlock_clicked = st.button("Unlock Details / Authenticate")
+# SECRET TUTOR ACCESS VIA URL QUERY PARAMETER (?pin=com4025!)
+# Access URL: your-app-url/?pin=com4025!
+if st.query_params.get("pin") == "com4025!":
+    st.divider()
+    st.markdown('<p class="section-header">🔒 Tutor Control Panel (Private)</p>', unsafe_allow_html=True)
     
-    if unlock_clicked or pin_input:
-        if pin_input == "com4025!":
-            st.success("🔓 Access Granted")
-            
-            # 1. Detailed Student Table
-            st.markdown("### 📋 Student Roster Submissions")
-            if st.session_state.submissions.empty:
-                st.info("No student submissions logged yet.")
-            else:
-                st.dataframe(
-                    st.session_state.submissions[["Student Email", "Chosen Question", "Progress Status"]], 
-                    use_container_width=True, 
-                    hide_index=True
-                )
-            
-            # 2. Hard Reset Button inside Admin View
-            st.divider()
-            st.markdown("### ⚙️ Admin Testing Tools")
-            if st.button("🗑️ Clear All Test Data Now"):
-                st.session_state["submissions"] = pd.DataFrame(columns=["Student Email", "Chosen Question", "Progress Status"])
-                for k in list(st.session_state.keys()):
-                    if k != "submissions":
-                        del st.session_state[k]
-                st.success("Data wiped!")
-                st.rerun()
-        else:
-            st.error("❌ Incorrect PIN. Please try again.")
+    st.markdown("### 📋 Student Roster Submissions")
+    if st.session_state.submissions.empty:
+        st.info("No student submissions logged yet.")
+    else:
+        st.dataframe(
+            st.session_state.submissions[["Student Email", "Chosen Question", "Progress Status"]], 
+            use_container_width=True, 
+            hide_index=True
+        )
+    
+    st.markdown("### ⚙️ Admin Tools")
+    if st.button("🗑️ Clear All Test Data Now"):
+        st.session_state["submissions"] = pd.DataFrame(columns=["Student Email", "Chosen Question", "Progress Status"])
+        for k in list(st.session_state.keys()):
+            if k != "submissions":
+                del st.session_state[k]
+        st.success("Data wiped!")
+        st.rerun()
