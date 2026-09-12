@@ -4,7 +4,7 @@ import pandas as pd
 # Page Configuration
 st.set_page_config(page_title="Assessment Topic Tracker", page_icon="📝", layout="centered")
 
-# Custom Styling Fix (High contrast text, readable labels, proper expander styling)
+# Custom Styling (Bright Theme, Fixed Invisible Expander Text)
 st.markdown("""
     <style>
     /* Force Bright White Page Background */
@@ -38,7 +38,7 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
     }
     
-    /* Form Labels - Forced Dark Visible Text */
+    /* Form Labels */
     [data-testid="stForm"] label, label, div[data-testid="stWidgetLabel"] p {
         color: #b45309 !important;
         font-size: 1.05rem !important;
@@ -94,17 +94,24 @@ st.markdown("""
         color: #0f172a !important;
     }
 
-    /* Sharp, High-Contrast Expander with High Visibility Labels */
+    /* FIX INVISIBLE HEADINGS/TEXT INSIDE EXPANDER */
     div[data-testid="stExpander"] {
         background-color: #f8fafc !important;
         border: 2px solid #64748b !important;
         border-radius: 8px !important;
         margin-top: 20px !important;
     }
+    div[data-testid="stExpander"] * {
+        color: #0f172a !important;
+    }
     div[data-testid="stExpander"] summary p {
         color: #0f172a !important;
         font-weight: 800 !important;
         font-size: 1.05rem !important;
+    }
+    div[data-testid="stExpander"] h3 {
+        color: #b45309 !important;
+        font-weight: 800 !important;
     }
 
     /* Section Headers */
